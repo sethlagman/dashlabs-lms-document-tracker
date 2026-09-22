@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Document Tracker · Dashlabs LMS</title>
+<style>
+  :root {
+    --blue: #2563EB;
+    --blue-light: #DBEAFE;
+    --blue-dark: #1D4ED8;
+    --green: #16A34A;
+    --green-light: #DCFCE7;
+    --green-dark: #15803D;
+    --amber: #D97706;
+    --amber-light: #FEF3C7;
+    --red: #DC2626;
+    --red-light: #FEE2E2;
+    --gray-25: #F8FAFC;
+    --gray-50: #F1F5F9;
+    --gray-100: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-400: #94A3B8;
+    --gray-500: #64748B;
+    --gray-700: #334155;
+    --gray-900: #0F172A;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { width: 84px; background: #fff; border-right: 1px solid var(--gray-100); display: flex; flex-direction: column; align-items: center; padding: 20px 0; flex-shrink: 0; }
+  .logo { width: 42px; height: 42px; background: var(--blue); border-radius: 12px; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px; margin-bottom: 28px; }
+  .nav-icons { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .nav-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--gray-400); cursor: pointer; transition: background .15s, color .15s; position: relative; }
+  .nav-icon svg { width: 20px; height: 20px; }
+  .nav-icon:hover { background: var(--gray-50); color: var(--gray-700); }
+  .nav-icon.active { background: var(--blue-light); color: var(--blue); }
+  .nav-icon.active::after { content: ""; position: absolute; left: -20px; top: 50%; transform: translateY(-50%); width: 4px; height: 20px; background: var(--blue); border-radius: 0 4px 4px 0; }
+  .nav-tag { position: absolute; left: 52px; top: 50%; transform: translateY(-50%); background: var(--gray-900); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 5px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 20; }
+  .nav-icon:hover .nav-tag { opacity: 1; }
+  .nav-icon.active .nav-tag { color: #93C5FD; }
+  .nav-bottom { display: flex; flex-direction: column; gap: 6px; padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--gray-100); width: 100%; align-items: center; }
+  .nav-icon.logout { color: #DC2626; }
+  .nav-icon.logout:hover { background: var(--red-light); }
+
+  /* Main */
+  .main { flex: 1; padding: 28px 36px 60px; max-width: 1500px; }
+
+  .header-banner { background: linear-gradient(135deg, #EEF2FF 0%, #E4E9FC 100%); border-radius: var(--radius); padding: 22px 30px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 16px; flex-wrap: wrap; }
+  .header-banner h1 { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
+  .header-banner p { margin: 0; font-size: 13.5px; color: var(--gray-500); }
+  .header-time { text-align: right; }
+  .header-time .time { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .live-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--green); font-weight: 600; margin-top: 4px; justify-content: flex-end; }
+  .live-dot span.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-card { background: #fff; border-top: 3px solid var(--blue); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 16px 18px; }
+  .stat-card .label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 8px; }
+  .stat-card .value { font-size: 25px; font-weight: 700; }
+  .stat-card.amber { border-top-color: var(--amber); }
+  .stat-card.amber .value { color: var(--amber); }
+  .stat-card.red { border-top-color: var(--red); }
+  .stat-card.red .value { color: var(--red); }
+  .stat-card.green { border-top-color: var(--green); }
+  .stat-card.green .value { color: var(--green-dark); }
+  .stat-card.blue .value { color: var(--blue); }
+
+  .section-label { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-500); margin: 0 0 10px; }
+
+  /* Progress card */
+  .progress-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .progress-left { flex: 1; min-width: 220px; }
+  .progress-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .progress-top .pct { font-size: 20px; font-weight: 700; }
+  .progress-top .sub { font-size: 13px; color: var(--gray-500); }
+  .progress-track { height: 8px; background: var(--gray-100); border-radius: 6px; overflow: hidden; margin-top: 10px; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 6px; transition: width .5s ease; }
+  .progress-right { text-align: right; flex-shrink: 0; }
+  .progress-right .label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 4px; }
+  .progress-right .val { font-size: 16px; font-weight: 700; }
+
+  /* Layout columns */
+  .columns { display: flex; gap: 20px; align-items: flex-start; }
+  .col-left { flex: 1.7; min-width: 0; }
+  .col-right { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 24px; }
+
+  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; }
+  .filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filter-btn { border: 1px solid var(--gray-100); background: var(--gray-25); color: var(--gray-500); font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 100px; cursor: pointer; transition: all .15s; font-family: inherit; }
+  .filter-btn:hover { background: var(--gray-50); }
+  .filter-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  .doc-row { display: flex; align-items: center; gap: 14px; padding: 14px 6px; border-bottom: 1px solid var(--gray-50); flex-wrap: wrap; }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--gray-50); display: flex; align-items: center; justify-content: center; color: var(--gray-400); flex-shrink: 0; }
+  .doc-icon svg { width: 18px; height: 18px; }
+  .doc-info { flex: 1; min-width: 180px; }
+  .doc-name { font-size: 14.5px; font-weight: 600; color: var(--gray-900); }
+  .doc-sub { font-size: 12.5px; color: var(--gray-400); margin-top: 2px; }
+  .doc-note { font-size: 12px; color: var(--red); margin-top: 3px; font-weight: 500; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 100px; white-space: nowrap; flex-shrink: 0; }
+  .badge svg { width: 13px; height: 13px; }
+  .badge.signed { background: var(--blue-light); color: var(--blue-dark); }
+  .badge.approved { background: var(--green-light); color: var(--green-dark); }
+  .badge.pending { background: var(--amber-light); color: var(--amber); }
+  .badge.revision { background: var(--red-light); color: var(--red); }
+  .badge.notsub { background: var(--gray-50); color: var(--gray-500); }
+  .badge.locked { background: var(--gray-50); color: var(--gray-400); }
+
+  .doc-action { flex-shrink: 0; border: 1px solid var(--gray-100); background: #fff; color: var(--blue); font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
+  .doc-action svg { width: 14px; height: 14px; }
+  .doc-action:hover { background: var(--blue-light); border-color: var(--blue-light); }
+  .doc-meta-text { font-size: 12px; color: var(--gray-400); font-style: italic; flex-shrink: 0; }
+
+  /* Submission bin */
+  .bin-card.pulse { animation: pulseBorder 1s ease; }
+  @keyframes pulseBorder { 0% { box-shadow: 0 0 0 0 rgba(37,99,235,.35); } 100% { box-shadow: 0 0 0 10px rgba(37,99,235,0); } }
+  .bin-sub { font-size: 12.5px; color: var(--gray-500); margin: -4px 0 14px; }
+  select#docSelect { width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--gray-100); font-size: 13.5px; font-family: inherit; color: var(--gray-900); margin-bottom: 12px; background: var(--gray-25); }
+  .dropzone { border: 2px dashed var(--gray-300); border-radius: 12px; padding: 26px 16px; text-align: center; cursor: pointer; transition: all .15s; background: var(--gray-25); }
+  .dropzone:hover, .dropzone.drag { border-color: var(--blue); background: var(--blue-light); }
+  .dropzone svg { width: 30px; height: 30px; color: var(--gray-400); margin-bottom: 8px; }
+  .dropzone.drag svg { color: var(--blue); }
+  .dropzone p { margin: 0; font-size: 13px; color: var(--gray-700); }
+  .dropzone .browse-link { color: var(--blue); font-weight: 700; }
+  .dropzone .hint { font-size: 11.5px; color: var(--gray-400); margin-top: 6px; }
+  .file-panel { display: none; align-items: center; gap: 10px; margin-top: 12px; background: var(--gray-25); border: 1px solid var(--gray-100); border-radius: 10px; padding: 10px 12px; }
+  .file-panel.show { display: flex; }
+  .file-panel .fi { width: 32px; height: 32px; border-radius: 8px; background: var(--blue-light); color: var(--blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .file-panel .fi svg { width: 16px; height: 16px; }
+  .file-panel .fname { font-size: 12.5px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-panel .fsize { font-size: 11.5px; color: var(--gray-400); }
+  .file-panel .fremove { cursor: pointer; color: var(--gray-400); font-size: 18px; line-height: 1; padding: 2px 6px; }
+  .submit-btn { width: 100%; margin-top: 12px; background: var(--blue); color: #fff; border: none; font-size: 13.5px; font-weight: 700; padding: 11px; border-radius: 9px; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 8px; transition: background .15s; font-family: inherit; }
+  .submit-btn.show { display: flex; }
+  .submit-btn:hover { background: var(--blue-dark); }
+
+  /* Activity */
+  .activity-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray-50); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .activity-dot svg { width: 14px; height: 14px; }
+  .activity-dot.green { background: var(--green-light); color: var(--green-dark); }
+  .activity-dot.amber { background: var(--amber-light); color: var(--amber); }
+  .activity-dot.red { background: var(--red-light); color: var(--red); }
+  .activity-text { font-size: 12.5px; color: var(--gray-700); line-height: 1.4; }
+  .activity-text b { font-weight: 700; color: var(--gray-900); }
+  .activity-time { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-900); color: #fff; padding: 13px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.2); display: flex; align-items: center; gap: 10px; transform: translateY(20px); opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 100; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 18px; height: 18px; color: #4ADE80; flex-shrink: 0; }
+
+  @media (max-width: 980px) {
+    .columns { flex-direction: column; }
+    .col-right { position: static; width: 100%; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .main { padding: 20px 16px 50px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .header-time { text-align: left; }
+    .live-dot { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">D</div>
+    <nav class="nav-icons">
+      <div class="nav-icon" title="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-tag">Dashboard</span></div>
+      <div class="nav-icon" title="Learning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg><span class="nav-tag">Learning</span></div>
+      <div class="nav-icon" title="Assessments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg><span class="nav-tag">Assessments</span></div>
+      <div class="nav-icon" title="Progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></svg><span class="nav-tag">Progress</span></div>
+      <div class="nav-icon" title="Attendance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg><span class="nav-tag">Attendance</span></div>
+      <div class="nav-icon active" title="Documents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6Z"/></svg><span class="nav-tag">Documents — new</span></div>
+      <div class="nav-icon" title="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg><span class="nav-tag">Profile</span></div>
+    </nav>
+    <div class="nav-bottom">
+      <div class="nav-icon" title="Dark mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.5A8.5 8.5 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5Z"/></svg></div>
+      <div class="nav-icon logout" title="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="header-banner">
+      <div>
+        <h1>Document Tracker 📁</h1>
+        <p>Monday, August 17, 2026 · Submit and track your internship documents</p>
+      </div>
+      <div class="header-time">
+        <div class="time" id="clock">11:46:27</div>
+        <div class="live-dot"><span class="dot"></span> Live</div>
+      </div>
+    </header>
+
+    <section class="stats-grid" id="statsGrid"></section>
+
+    <section class="progress-card">
+      <div class="progress-left">
+        <p class="section-label" style="margin-bottom:6px;">Document Submission Progress</p>
+        <div class="progress-top"><span class="pct" id="progressPct">73%</span><span class="sub">Submitted</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:73%"></div></div>
+      </div>
+      <div class="progress-right">
+        <div class="label">Documents Remaining</div>
+        <div class="val" id="remainingVal">3</div>
+      </div>
+    </section>
+
+    <div class="columns">
+      <div class="col-left">
+        <div class="card">
+          <p class="section-label">Required Documents</p>
+          <div class="filters" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="action">Action Needed</button>
+            <button class="filter-btn" data-filter="review">In Review</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+          </div>
+          <div id="docList"></div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="card bin-card" id="binCard">
+          <p class="section-label">Submission Bin</p>
+          <p class="bin-sub">Choose the document you're submitting, then drop your file below.</p>
+          <select id="docSelect"></select>
+          <div class="dropzone" id="dropzone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20.4 17.5A4.5 4.5 0 0 0 18 9h-1.3A7 7 0 1 0 4 15.9"/></svg>
+            <p>Drag & drop your file here, or <span class="browse-link">click to browse</span></p>
+            <p class="hint">PDF, DOCX, JPG or PNG · Max 10MB</p>
+          </div>
+          <input type="file" id="fileInput" hidden accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+          <div class="file-panel" id="filePanel">
+            <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><polyline points="14 3 14 8 19 8"/></svg></div>
+            <div style="flex:1;min-width:0;">
+              <div class="fname" id="fname">file.pdf</div>
+              <div class="fsize" id="fsize">—</div>
+            </div>
+            <div class="fremove" id="fremove">×</div>
+          </div>
+          <button class="submit-btn" id="submitBtn">Submit Document</button>
+        </div>
+
+        <div class="card">
+          <p class="section-label">Recent Activity</p>
+          <div id="activityList"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></svg>
+  <span id="toastMsg">Done</span>
+</div>
+
+<script>
+const ICONS = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  circle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 20h14"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><polyline points="7 14 12 9 17 14"/><path d="M5 4h14"/></svg>',
+  file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><polyline points="14 3 14 8 19 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>',
+};
+
+const STATUS_META = {
+  signed:       { label: 'Signed',         cls: 'signed',   icon: ICONS.check },
+  approved:     { label: 'Approved',       cls: 'approved', icon: ICONS.check },
+  pending:      { label: 'Pending Review', cls: 'pending',  icon: ICONS.clock },
+  revision:     { label: 'Needs Revision', cls: 'revision', icon: ICONS.alert },
+  notsubmitted: { label: 'Not Submitted',  cls: 'notsub',   icon: ICONS.circle },
+  locked:       { label: 'Locked',         cls: 'locked',   icon: ICONS.lock },
+};
+
+let documents = [
+  { id: 'endorsement', name: 'School Endorsement Letter', sub: 'Signature required from your school', status: 'signed' },
+  { id: 'moa', name: 'Memorandum of Agreement (MOA)', sub: 'Signature required from both parties', status: 'signed' },
+  { id: 'resume', name: 'Resume / CV', sub: 'No signature required', status: 'approved' },
+  { id: 'medcert', name: 'Medical Certificate', sub: 'No signature required', status: 'approved' },
+  { id: 'consent', name: 'Parent / Guardian Consent Form', sub: 'Required if under 18', status: 'approved' },
+  { id: 'insurance', name: 'Insurance Certificate / Waiver', sub: 'Signature required', status: 'pending' },
+  { id: 'dtr', name: 'Daily Time Record (Weeks 1-4)', sub: 'Signature required from supervisor', status: 'pending' },
+  { id: 'midterm', name: 'Midterm Evaluation Form', sub: 'Signature required from supervisor', status: 'revision', note: 'Missing supervisor signature — please re-upload.' },
+  { id: 'final', name: 'Final Evaluation Form', sub: 'Signature required from supervisor', status: 'notsubmitted' },
+  { id: 'narrative', name: 'Narrative / Accomplishment Report', sub: 'No signature required', status: 'notsubmitted' },
+  { id: 'certificate', name: 'Certificate of Completion', sub: 'Issued and signed by Dashlabs', status: 'locked', note: 'Unlocks once 75% of required hours are completed.' },
+];
+
+let activity = [
+  { icon: 'green', label: 'Resume / CV', action: 'approved', time: 'Aug 15, 2026 · 2:14 PM' },
+  { icon: 'green', label: 'Memorandum of Agreement', action: 'signed and finalized', time: 'Aug 14, 2026 · 10:02 AM' },
+  { icon: 'amber', label: 'Medical Certificate', action: 'submitted for review', time: 'Aug 13, 2026 · 9:40 AM' },
+  { icon: 'red', label: 'Midterm Evaluation Form', action: 'sent back — needs revision', time: 'Aug 12, 2026 · 4:51 PM' },
+];
+
+let currentFilter = 'all';
+
+function computeCounts() {
+  const c = { required: documents.length, submitted: 0, pending: 0, revision: 0, approved: 0, signed: 0 };
+  documents.forEach(d => {
+    if (d.status !== 'notsubmitted' && d.status !== 'locked') c.submitted++;
+    if (d.status === 'pending') c.pending++;
+    if (d.status === 'revision') c.revision++;
+    if (d.status === 'approved') c.approved++;
+    if (d.status === 'signed') c.signed++;
+  });
+  return c;
+}
+
+function renderStats() {
+  const c = computeCounts();
+  const cards = [
+    { label: 'Documents Required', value: c.required, cls: '' },
+    { label: 'Submitted', value: c.submitted, cls: 'blue' },
+    { label: 'Pending Review', value: c.pending, cls: 'amber' },
+    { label: 'Needs Revision', value: c.revision, cls: 'red' },
+    { label: 'Approved', value: c.approved, cls: 'green' },
+    { label: 'Signed', value: c.signed, cls: 'blue' },
+  ];
+  document.getElementById('statsGrid').innerHTML = cards.map(s => `
+    <div class="stat-card ${s.cls}"><div class="label">${s.label}</div><div class="value">${s.value}</div></div>`).join('');
+}
+
+function renderProgress() {
+  const c = computeCounts();
+  const pct = Math.round((c.submitted / c.required) * 100);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('remainingVal').textContent = c.required - c.submitted;
+}
+
+function filteredDocs() {
+  if (currentFilter === 'action') return documents.filter(d => d.status === 'notsubmitted' || d.status === 'revision');
+  if (currentFilter === 'review') return documents.filter(d => d.status === 'pending');
+  if (currentFilter === 'completed') return documents.filter(d => d.status === 'approved' || d.status === 'signed');
+  return documents;
+}
+
+function renderDocs() {
+  const list = filteredDocs();
+  document.getElementById('docList').innerHTML = list.map(d => {
+    const meta = STATUS_META[d.status];
+    let actionHtml = '';
+    if (d.status === 'notsubmitted' || d.status === 'revision') {
+      actionHtml = `<button class="doc-action" onclick="openBinFor('${d.id}')">${ICONS.upload} Upload</button>`;
+    } else if (d.status === 'approved' || d.status === 'signed') {
+      actionHtml = `<button class="doc-action" onclick="mockDownload('${d.name}')">${ICONS.download} Download</button>`;
+    } else if (d.status === 'pending') {
+      actionHtml = `<span class="doc-meta-text">Awaiting review</span>`;
+    } else if (d.status === 'locked') {
+      actionHtml = `<span class="doc-meta-text">Not yet available</span>`;
+    }
+    return `
+      <div class="doc-row">
+        <div class="doc-icon">${ICONS.file}</div>
+        <div class="doc-info">
+          <div class="doc-name">${d.name}</div>
+          <div class="doc-sub">${d.sub}</div>
+          ${d.note ? `<div class="doc-note">${d.note}</div>` : ''}
+        </div>
+        <span class="badge ${meta.cls}">${meta.icon} ${meta.label}</span>
+        ${actionHtml}
+      </div>`;
+  }).join('') || `<p style="color:var(--gray-400);font-size:13px;padding:20px 6px;">No documents in this view.</p>`;
+}
+
+function renderFilters() {
+  const counts = {
+    all: documents.length,
+    action: documents.filter(d => d.status === 'notsubmitted' || d.status === 'revision').length,
+    review: documents.filter(d => d.status === 'pending').length,
+    completed: documents.filter(d => d.status === 'approved' || d.status === 'signed').length,
+  };
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    const f = btn.dataset.filter;
+    const labelBase = { all: 'All', action: 'Action Needed', review: 'In Review', completed: 'Completed' }[f];
+    btn.textContent = `${labelBase} (${counts[f]})`;
+    btn.classList.toggle('active', f === currentFilter);
+  });
+}
+
+function renderDocSelect() {
+  const options = documents.filter(d => d.status !== 'locked');
+  document.getElementById('docSelect').innerHTML = options.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+function renderActivity() {
+  document.getElementById('activityList').innerHTML = activity.map(a => `
+    <div class="activity-item">
+      <div class="activity-dot ${a.icon}">${a.icon === 'green' ? ICONS.check : a.icon === 'red' ? ICONS.alert : ICONS.clock}</div>
+      <div><div class="activity-text"><b>${a.label}</b> ${a.action}</div><div class="activity-time">${a.time}</div></div>
+    </div>`).join('');
+}
+
+function renderAll() { renderStats(); renderProgress(); renderFilters(); renderDocs(); renderDocSelect(); renderActivity(); }
+
+document.getElementById('filterBar').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  currentFilter = btn.dataset.filter;
+  renderFilters();
+  renderDocs();
+});
+
+function openBinFor(id) {
+  document.getElementById('docSelect').value = id;
+  document.getElementById('binCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const bin = document.getElementById('binCard');
+  bin.classList.remove('pulse'); void bin.offsetWidth; bin.classList.add('pulse');
+}
+
+function mockDownload(name) { showToast(`Downloading "${name}"…`); }
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const filePanel = document.getElementById('filePanel');
+const submitBtn = document.getElementById('submitBtn');
+let pendingFile = null;
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  pendingFile = file;
+  document.getElementById('fname').textContent = file.name;
+  document.getElementById('fsize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+  filePanel.classList.add('show');
+  submitBtn.classList.add('show');
+}
+
+document.getElementById('fremove').addEventListener('click', () => {
+  pendingFile = null;
+  fileInput.value = '';
+  filePanel.classList.remove('show');
+  submitBtn.classList.remove('show');
+});
+
+submitBtn.addEventListener('click', () => {
+  const docId = document.getElementById('docSelect').value;
+  const doc = documents.find(d => d.id === docId);
+  if (!doc || !pendingFile) return;
+  doc.status = 'pending';
+  delete doc.note;
+  activity.unshift({ icon: 'amber', label: doc.name, action: 'submitted for review', time: 'Just now' });
+  renderAll();
+  showToast(`"${pendingFile.name}" submitted for review.`);
+  pendingFile = null;
+  fileInput.value = '';
+  filePanel.classList.remove('show');
+  submitBtn.classList.remove('show');
+});
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function tick() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+tick();
+setInterval(tick, 1000);
+
+renderAll();
+</script>
+</body>
+</html>

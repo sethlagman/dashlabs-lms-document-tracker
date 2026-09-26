@@ -42,9 +42,9 @@ export async function uploadDocument(internName, documentName, file) {
 // Used by: Person 3 (AdminPage)
 export async function getAllSubmissions() {
   // TODO (Person 3): uncomment and use this once Person 1's route is ready.
-  // const res = await fetch(`${BASE}/submissions`);
-  // if (!res.ok) throw new Error("Failed to fetch submissions");
-  // return res.json();
+  const res = await fetch(`${BASE}/submissions`);
+  if (!res.ok) throw new Error("Failed to fetch submissions");
+  return res.json();
 }
 
 // ── PATCH /api/submissions/:id ───────────────────────────────────────────────
@@ -54,13 +54,14 @@ export async function getAllSubmissions() {
 // Used by: Person 3 (AdminPage)
 export async function updateStatus(id, status) {
   // TODO (Person 3): uncomment and use this once Person 1's route is ready.
-  // const res = await fetch(`${BASE}/submissions/${id}`, {
-  //   method: "PATCH",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ status }),
-  // });
-  // if (!res.ok) throw new Error("Status update failed");
-  // return res.json();
+  const res = await fetch(`${BASE}/submissions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+
+  if (!res.ok) throw new Error("Status update failed");
+  return res.json();
 }
 
 // ── POST /api/submissions/:id/sign ───────────────────────────────────────────
@@ -70,12 +71,13 @@ export async function updateStatus(id, status) {
 // Used by: Person 3 (AdminPage)
 export async function uploadSignedFile(id, signedFile) {
   // TODO (Person 3): uncomment and use this once Person 1's route is ready.
-  // const formData = new FormData();
-  // formData.append("signedFile", signedFile);
-  // const res = await fetch(`${BASE}/submissions/${id}/sign`, {
-  //   method: "POST",
-  //   body: formData,
-  // });
-  // if (!res.ok) throw new Error("Signed file upload failed");
-  // return res.json();
+  const formData = new FormData();
+  formData.append("signedFile", signedFile);
+  const res = await fetch(`${BASE}/submissions/${id}/sign`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error("Signed file upload failed");
+  return res.json();
 }

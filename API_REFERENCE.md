@@ -1,16 +1,16 @@
-# Backend API Reference
-### For Person 2 (Intern Page) and Person 3 (Staff Page)
+# API Reference
 
-The backend is **done and working**. This document tells you exactly what each endpoint expects and what it gives back, so you can finish your pages with confidence.
+Complete reference for all backend endpoints.
 
-**Base URL during development:** `http://localhost:5000`
-Vite's proxy is already configured, so in your frontend code you can just write `/api/...` — you don't need the full URL.
+**Base URL (development):** `http://localhost:5000`
+
+During frontend development, Vite proxies `/api/...` requests to `http://localhost:5000` automatically, so frontend code can use `/api/...` directly without the full URL.
 
 ---
 
-## Data shape — the Submission object
+## The Submission Object
 
-Every endpoint that returns a submission (or a list of them) uses this shape:
+Every endpoint that returns a submission uses this shape:
 
 ```json
 {
@@ -31,11 +31,11 @@ Every endpoint that returns a submission (or a list of them) uses this shape:
 
 | Value | Meaning |
 |---|---|
-| `"not submitted"` | The intern has never uploaded this document (checklist only — not stored in DB) |
-| `"pending"` | Intern uploaded a file, waiting for staff review |
-| `"approved"` | Staff approved it |
-| `"rejected"` | Staff rejected it — intern should re-upload |
-| `"signed"` | Staff uploaded a processed/signed copy — intern can download it |
+| `"not submitted"` | The intern has not uploaded this document yet (checklist only — not stored in DB) |
+| `"pending"` | File uploaded, awaiting staff review |
+| `"approved"` | Staff approved the submission |
+| `"rejected"` | Staff rejected it — intern must re-upload |
+| `"signed"` | Staff uploaded a signed/processed copy — intern can download it |
 
 ---
 
@@ -43,19 +43,24 @@ Every endpoint that returns a submission (or a list of them) uses this shape:
 
 ---
 
-### 1. `GET /api/checklist?intern=NAME`
-**Used by: Person 2 (DocumentsPage)**
+### GET `/api/checklist?intern=NAME`
 
-Returns all 11 required documents with this intern's submission status for each one.
+Returns all 11 required documents merged with the intern's current submission status for each.
+
+#### Query parameters
+
+| Parameter | Required | Description |
+|---|---|---|
+| `intern` | ✅ | The intern's full name |
 
 #### Request
 ```
 GET /api/checklist?intern=Juan%20dela%20Cruz
 ```
 
-#### Response — `200 OK` — array of 11 items
-Documents that have been submitted include the full Submission fields.
-Documents not yet submitted return a minimal object:
+#### Response — `200 OK`
+
+An array of exactly 11 items. Submitted documents include the full Submission fields; unsubmitted ones return a minimal object.
 
 ```json
 [
@@ -77,36 +82,28 @@ Documents not yet submitted return a minimal object:
 ```
 
 #### Error responses
+
 | Status | When |
 |---|---|
-| `400` | `intern` query param is missing |
+| `400` | `intern` query parameter is missing |
 | `500` | Database error |
-
-#### How to call it (api.js)
-```js
-// Uncomment this inside getChecklist() in src/api/api.js:
-const res = await fetch(`/api/checklist?intern=${encodeURIComponent(internName)}`);
-if (!res.ok) throw new Error("Failed to fetch checklist");
-return res.json(); // → array of 11 items
-```
 
 ---
 
-### 2. `POST /api/submissions`
-**Used by: Person 2 (DocumentsPage)**
+### POST `/api/submissions`
 
-Intern uploads a file for one document. Uses `multipart/form-data` because a file is attached.
-
-> If the intern re-uploads the same document, the existing record is updated (new file, status resets to `"pending"`).
+Intern uploads a file for one document. If a submission already exists for the same intern and document, it is updated with the new file and its status is reset to `"pending"`.
 
 #### Request — `multipart/form-data`
+
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `internName` | text | ✅ | The intern's full name |
 | `documentName` | text | ✅ | Must exactly match one of the 11 document names |
-| `file` | file | ✅ | The document file (PDF, image, etc. — max 10 MB) |
+| `file` | file | ✅ | The document file (PDF, DOCX, JPG, PNG — max 10 MB) |
 
-#### Response — `201 Created` — the saved Submission object
+#### Response — `201 Created`
+
 ```json
 {
   "_id":          "664f1a2b3c4d5e6f7a8b9c0d",
@@ -115,36 +112,30 @@ Intern uploads a file for one document. Uses `multipart/form-data` because a fil
   "status":       "pending",
   "fileName":     "1718000000000-123456789.pdf",
   "filePath":     "/uploads/1718000000000-123456789.pdf",
-  ...
+  "signedFileName": null,
+  "signedFilePath": null
 }
 ```
 
 #### Error responses
+
 | Status | When |
 |---|---|
-| `400` | Missing `internName`, `documentName`, or `file` |
-| `400` | `documentName` is not one of the 11 recognised names |
+| `400` | `internName`, `documentName`, or `file` is missing |
+| `400` | `documentName` does not match any of the 11 recognised names |
 | `500` | Database error |
-
-#### How to call it (api.js)
-```js
-// Uncomment this inside uploadDocument() in src/api/api.js:
-const formData = new FormData();
-formData.append("internName", internName);
-formData.append("documentName", documentName);
-formData.append("file", file);
-const res = await fetch("/api/submissions", { method: "POST", body: formData });
-if (!res.ok) throw new Error("Upload failed");
-return res.json(); // → saved Submission object
-```
 
 ---
 
-### 3. `GET /api/submissions`
-**Used by: Person 3 (AdminPage)**
+### GET `/api/submissions`
 
-Returns every submission across all interns, sorted newest first.
-Optionally filter by intern name with `?intern=NAME`.
+Returns all submission records across all interns, sorted newest first.
+
+#### Query parameters
+
+| Parameter | Required | Description |
+|---|---|---|
+| `intern` | ❌ | Filter results to a specific intern's submissions |
 
 #### Request
 ```
@@ -152,7 +143,8 @@ GET /api/submissions
 GET /api/submissions?intern=Juan%20dela%20Cruz
 ```
 
-#### Response — `200 OK` — array of Submission objects
+#### Response — `200 OK`
+
 ```json
 [
   {
@@ -163,44 +155,38 @@ GET /api/submissions?intern=Juan%20dela%20Cruz
     "filePath":     "/uploads/1718000000000-123456789.pdf",
     ...
   },
-  { ... },
   { ... }
 ]
 ```
 
-Returns an empty array `[]` if no submissions exist yet.
+Returns an empty array `[]` if no submissions exist.
 
 #### Error responses
+
 | Status | When |
 |---|---|
 | `500` | Database error |
 
-#### How to call it (api.js)
-```js
-// Uncomment this inside getAllSubmissions() in src/api/api.js:
-const res = await fetch("/api/submissions");
-if (!res.ok) throw new Error("Failed to fetch submissions");
-return res.json(); // → array of Submission objects
-```
-
 ---
 
-### 4. `PATCH /api/submissions/:id`
-**Used by: Person 3 (AdminPage)**
+### PATCH `/api/submissions/:id`
 
-Staff sets a submission's status to `"approved"` or `"rejected"`.
+Updates a submission's status to `"approved"` or `"rejected"`.
+
+#### URL parameters
+
+| Parameter | Description |
+|---|---|
+| `id` | The submission's `_id` |
 
 #### Request — `Content-Type: application/json`
-| Param | Where | Description |
-|---|---|---|
-| `id` | URL | The submission's `_id` |
-| `status` | JSON body | Must be `"approved"` or `"rejected"` |
 
 ```json
 { "status": "approved" }
 ```
 
-#### Response — `200 OK` — the updated Submission object
+#### Response — `200 OK`
+
 ```json
 {
   "_id":    "664f1a2b3c4d5e6f7a8b9c0d",
@@ -210,91 +196,62 @@ Staff sets a submission's status to `"approved"` or `"rejected"`.
 ```
 
 #### Error responses
+
 | Status | When |
 |---|---|
 | `400` | `status` is not `"approved"` or `"rejected"` |
-| `404` | No submission with that `_id` |
+| `404` | No submission found with the given `_id` |
 | `500` | Database error |
-
-#### How to call it (api.js)
-```js
-// Uncomment this inside updateStatus() in src/api/api.js:
-const res = await fetch(`/api/submissions/${id}`, {
-  method: "PATCH",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ status }),
-});
-if (!res.ok) throw new Error("Status update failed");
-return res.json(); // → updated Submission object
-```
 
 ---
 
-### 5. `POST /api/submissions/:id/sign`
-**Used by: Person 3 (AdminPage)**
+### POST `/api/submissions/:id/sign`
 
-Staff uploads the signed/processed copy of a document. Sets status to `"signed"` automatically.
+Staff uploads a signed or processed version of a document. The submission's status is automatically set to `"signed"`.
+
+#### URL parameters
+
+| Parameter | Description |
+|---|---|
+| `id` | The submission's `_id` |
 
 #### Request — `multipart/form-data`
-| Param | Where | Description |
-|---|---|---|
-| `id` | URL | The submission's `_id` |
-| `signedFile` | form field (file) | The signed document file (max 10 MB) |
 
-#### Response — `200 OK` — the updated Submission object
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `signedFile` | file | ✅ | The signed document file (max 10 MB) |
+
+#### Response — `200 OK`
+
 ```json
 {
   "_id":            "664f1a2b3c4d5e6f7a8b9c0d",
   "status":         "signed",
-  "signedFileName": "1718000000000-987654321.pdf",
-  "signedFilePath": "/uploads/1718000000000-987654321.pdf",
+  "signedFileName": "1718000000999-987654321.pdf",
+  "signedFilePath": "/uploads/1718000000999-987654321.pdf",
   ...
 }
 ```
 
 #### Error responses
+
 | Status | When |
 |---|---|
-| `400` | No `signedFile` attached |
-| `404` | No submission with that `_id` |
+| `400` | No `signedFile` attached to the request |
+| `404` | No submission found with the given `_id` |
 | `500` | Database error |
-
-#### How to call it (api.js)
-```js
-// Uncomment this inside uploadSignedFile() in src/api/api.js:
-const formData = new FormData();
-formData.append("signedFile", signedFile);
-const res = await fetch(`/api/submissions/${id}/sign`, {
-  method: "POST",
-  body: formData,
-});
-if (!res.ok) throw new Error("Signed file upload failed");
-return res.json(); // → updated Submission object
-```
 
 ---
 
-## Downloading files
+## Downloading Files
 
-Uploaded files are served as static assets by the Express backend.
+Uploaded files are served as static assets by the Express backend at `/uploads/<filename>`.
 
-If a submission has `filePath: "/uploads/abc.pdf"`, you can use that string directly as an `href` or `src` in your JSX:
+The `filePath` and `signedFilePath` fields in the Submission object are already formatted as URL paths (e.g. `/uploads/filename.pdf`), so they can be used directly as `href` values in the frontend:
 
 ```jsx
 <a href={submission.filePath} target="_blank" rel="noreferrer">View file</a>
 <a href={submission.signedFilePath} download>Download signed copy</a>
 ```
 
-Vite's dev proxy forwards `/uploads/...` requests to `http://localhost:5000` automatically, so this works without any extra configuration.
-
----
-
-## Switching from fake data to the real API
-
-Both page files (`DocumentsPage.jsx` and `AdminPage.jsx`) have `FAKE_DATA` at the top that's shaped exactly like the real responses above. When you're ready to connect:
-
-1. Open `src/api/api.js` and **uncomment** the `fetch(...)` code inside the relevant function(s)
-2. In your page file, **uncomment** the import line at the top
-3. In the `useEffect`, replace `setXxx(FAKE_DATA)` with the real API call
-
-That's it — one uncomment per function, one line swap per page.
+Vite's dev proxy forwards `/uploads/...` requests to `http://localhost:5000` automatically.

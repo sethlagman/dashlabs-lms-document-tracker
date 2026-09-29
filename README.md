@@ -1,6 +1,6 @@
-# Internship Document Tracker — Skeleton
+# Internship Document Tracker
 
-A 3-person group prototype for tracking intern document submissions.
+A web application for managing internship document submissions. Interns upload required documents, and staff review each one — approving, rejecting, or uploading a signed copy back.
 
 **Stack:** React (Vite) + Tailwind CSS + React Router · Node.js + Express · MongoDB Atlas + Mongoose
 
@@ -10,126 +10,149 @@ A 3-person group prototype for tracking intern document submissions.
 
 ```
 Internship Project/
-├── frontend/                     ← Person 2 & 3 work here
+├── frontend/
 │   ├── index.html
-│   ├── vite.config.js            ← proxies /api → localhost:5000
+│   ├── vite.config.js          ← proxies /api and /uploads → localhost:5000
 │   ├── tailwind.config.js
 │   ├── postcss.config.js
 │   └── src/
-│       ├── main.jsx              ← entry point, wraps app in BrowserRouter
-│       ├── App.jsx               ← top-level router (/ → /documents redirect)
-│       ├── index.css             ← Tailwind directives
+│       ├── main.jsx            ← app entry point, wraps in BrowserRouter
+│       ├── App.jsx             ← sidebar layout + route declarations
+│       ├── index.css           ← Tailwind directives
 │       ├── api/
-│       │   └── api.js            ← ★ shared API layer — all fetch() calls go here
+│       │   └── api.js          ← all fetch() calls to the backend
 │       └── pages/
-│           ├── DocumentsPage.jsx ← ★ Person 2 builds this (/documents)
-│           └── AdminPage.jsx     ← ★ Person 3 builds this (/admin)
+│           ├── DocumentsPage.jsx   ← intern-facing document submission page (/documents)
+│           └── AdminPage.jsx       ← staff review and management page (/admin)
 │
-├── backend/                      ← Person 1 works here
-│   ├── server.js                 ← Express entry point + MongoDB connection
-│   ├── .env.example              ← copy to .env and fill in MONGO_URI
-│   ├── uploads/                  ← multer saves files here (auto-created on first upload)
+├── backend/
+│   ├── server.js               ← Express entry point + MongoDB connection
+│   ├── .env.example            ← copy to .env and fill in MONGO_URI
+│   ├── uploads/                ← uploaded files saved here by multer
 │   ├── models/
-│   │   └── Submission.js         ← ★ Mongoose schema (fully defined — do not change)
+│   │   └── Submission.js       ← Mongoose schema
 │   └── routes/
-│       └── submissions.js        ← ★ Person 1 fills in the 5 route handlers here
+│       └── submissions.js      ← all 5 API route handlers
 │
-└── README.md
+├── README.md
+├── API_REFERENCE.md            ← full API endpoint documentation
+├── API_TESTING.md              ← how to test the API with Postman
+└── MONGODB_SETUP.md            ← how to connect to MongoDB Atlas
 ```
 
 ---
 
 ## Quick Start
 
+### Prerequisites
+- [Node.js](https://nodejs.org) (v18 or higher)
+- A [MongoDB Atlas](https://cloud.mongodb.com) account and cluster
+- [Git](https://git-scm.com)
+
 ### Backend
-```bash
+
+```powershell
 cd backend
 npm install
-cp .env.example .env        # then edit .env with your MongoDB Atlas URI
-node server.js              # or: npm run dev  (uses nodemon)
+cp .env.example .env
+```
+
+Open `.env` and fill in your MongoDB Atlas connection string:
+
+```
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/internship-tracker?retryWrites=true&w=majority&appName=Cluster0
+PORT=5000
+```
+
+Then start the server:
+
+```powershell
+npm run dev
+```
+
+You should see:
+```
+✅  Connected to MongoDB Atlas
+🚀  Server running on port 5000
 ```
 
 ### Frontend
-```bash
+
+Open a second terminal:
+
+```powershell
 cd frontend
 npm install
-npm run dev                 # opens http://localhost:5173
+npm run dev
 ```
 
-Vite is configured to proxy `/api` and `/uploads` requests to `http://localhost:5000`,
-so both servers need to be running at the same time during development.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+> Both servers must be running at the same time. Vite proxies all `/api` and `/uploads` requests to `http://localhost:5000` automatically.
 
 ---
 
-## The 5 API Endpoints (the contract — don't change without telling everyone)
+## Pages
 
-| Method | Route | Who uses it | What it does |
-|--------|-------|-------------|--------------|
-| GET | `/api/checklist?intern=NAME` | Person 2 | 11 docs + intern's status for each |
-| POST | `/api/submissions` | Person 2 | Intern uploads a file |
-| GET | `/api/submissions` | Person 3 | All submissions (staff view) |
-| PATCH | `/api/submissions/:id` | Person 3 | Set status → approved / rejected |
-| POST | `/api/submissions/:id/sign` | Person 3 | Staff uploads signed copy |
+| Route | Description |
+|---|---|
+| `/documents` | Intern page — view document statuses, upload files, download signed copies |
+| `/admin` | Staff page — review all submissions, approve/reject, upload signed copies |
 
 ---
 
-## Who Builds What
+## API Endpoints
 
-### Person 1 — Backend (`backend/routes/submissions.js`)
-Fill in the 5 route handlers. Each currently returns a placeholder JSON response.
-Tasks:
-- Save intern-uploaded files with `multer`, create a `Submission` document
-- Return the merged checklist (all 11 docs + status) for `GET /api/checklist`
-- Approve / reject via `PATCH /api/submissions/:id`
-- Save the staff-signed file and set status to `"signed"` via `POST /api/submissions/:id/sign`
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/checklist?intern=NAME` | Returns all 11 documents with the intern's status for each |
+| POST | `/api/submissions` | Intern uploads a file for one document |
+| GET | `/api/submissions` | Returns all submissions (staff view) |
+| PATCH | `/api/submissions/:id` | Updates a submission's status to approved or rejected |
+| POST | `/api/submissions/:id/sign` | Staff uploads a signed copy; status becomes "signed" |
 
-### Person 2 — Intern Page (`frontend/src/pages/DocumentsPage.jsx`)
-Build the intern-facing document list UI.
-Tasks:
-- Show all 11 documents and their status (start with `FAKE_DATA` at the top of the file)
-- "Upload" button for anything not yet submitted
-- "Download" button when a signed copy is available
-- **One-line swap to real data:** replace `setDocuments(FAKE_DATA)` with `getChecklist(internName).then(setDocuments)` and uncomment the import at the top of `api.js`
-
-### Person 3 — Staff Page (`frontend/src/pages/AdminPage.jsx`)
-Build the staff admin table UI.
-Tasks:
-- Table of all submissions (start with `FAKE_DATA` at the top of the file)
-- Approve / Reject buttons per row
-- "Upload Signed Copy" button per row
-- **One-line swap to real data:** replace `setSubmissions(FAKE_DATA)` with `getAllSubmissions().then(setSubmissions)` and uncomment the imports
+See `API_REFERENCE.md` for full request/response details.
 
 ---
 
-## Shared `api.js` — How the One-Line Swap Works
+## Required Documents
 
-Every function in `frontend/src/api/api.js` is a stub with the real `fetch()` code
-commented out. When Person 1's routes are ready:
+The following 11 documents are hardcoded in the application:
 
-1. Open the relevant function in `api.js`
-2. Uncomment the fetch code inside it
-3. In the page file, uncomment the import at the top and replace the `FAKE_DATA` line
-   with the real API call
-
-No other code changes needed.
+1. School Endorsement Letter
+2. Memorandum of Agreement (MOA)
+3. Parent/Guardian Consent Form
+4. Resume / CV
+5. Medical Certificate
+6. Insurance Certificate / Waiver
+7. Daily Time Record (DTR)
+8. Midterm Evaluation Form
+9. Final Evaluation Form
+10. Narrative / Accomplishment Report
+11. Certificate of Completion
 
 ---
 
-## Submission Model (Mongoose)
+## Data Model
 
 ```js
+// Submission document stored in MongoDB
 {
   internName:      String,   // the intern's full name
-  documentName:    String,   // one of the 11 hardcoded document names
+  documentName:    String,   // one of the 11 document names above
   status:          String,   // "pending" | "approved" | "rejected" | "signed"
-  fileName:        String,   // intern's uploaded filename
-  filePath:        String,   // path on disk (served at /uploads/...)
+  fileName:        String,   // intern's uploaded file name
+  filePath:        String,   // URL path, e.g. /uploads/filename.pdf
   signedFileName:  String,   // staff-uploaded signed file name
-  signedFilePath:  String,   // path on disk (served at /uploads/...)
+  signedFilePath:  String,   // URL path to the signed file
 }
 ```
 
-## Not in scope for this prototype
-- Authentication / login
-- Email notifications
-- Real e-signatures (staff just uploads a signed PDF)
+---
+
+## Out of Scope (Prototype)
+
+- User authentication and login
+- Email or push notifications
+- Digital e-signatures
+- Role-based access control

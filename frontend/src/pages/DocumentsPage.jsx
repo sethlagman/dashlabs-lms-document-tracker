@@ -41,29 +41,7 @@ export default function DocumentsPage() {
   // Get checklist from backend
   // ============================================================
   useEffect(() => {
-    /*
-    // Uncomment when Person 1's backend is ready:
-
-    if (!internName.trim()) {
-      setDocuments([]);
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    getChecklist(internName)
-      .then((data) => {
-        setDocuments(data);
-      })
-      .catch(() => {
-        setError("Unable to load your documents.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-    */
-
+   
     // Keep fake data while backend is not connected
     setDocuments(FAKE_DATA);
   }, [internName]);

@@ -13,10 +13,9 @@ const BASE = "/api";
 //
 // Used by: Person 2 (DocumentsPage)
 export async function getChecklist(internName) {
-  // TODO (Person 2): uncomment and use this once Person 1's route is ready.
-  // const res = await fetch(`${BASE}/checklist?intern=${encodeURIComponent(internName)}`);
-  // if (!res.ok) throw new Error("Failed to fetch checklist");
-  // return res.json();
+  const res = await fetch(`${BASE}/checklist?intern=${encodeURIComponent(internName)}`);
+  if (!res.ok) throw new Error("Failed to fetch checklist");
+  return res.json();
 }
 
 // ── POST /api/submissions ────────────────────────────────────────────────────
@@ -25,14 +24,13 @@ export async function getChecklist(internName) {
 //
 // Used by: Person 2 (DocumentsPage)
 export async function uploadDocument(internName, documentName, file) {
-  // TODO (Person 2): uncomment and use this once Person 1's route is ready.
-  // const formData = new FormData();
-  // formData.append("internName", internName);
-  // formData.append("documentName", documentName);
-  // formData.append("file", file);
-  // const res = await fetch(`${BASE}/submissions`, { method: "POST", body: formData });
-  // if (!res.ok) throw new Error("Upload failed");
-  // return res.json();
+  const formData = new FormData();
+  formData.append("internName", internName);
+  formData.append("documentName", documentName);
+  formData.append("file", file);
+  const res = await fetch(`${BASE}/submissions`, { method: "POST", body: formData });
+  if (!res.ok) throw new Error("Upload failed");
+  return res.json();
 }
 
 // ── GET /api/submissions ─────────────────────────────────────────────────────

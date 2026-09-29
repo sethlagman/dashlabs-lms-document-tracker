@@ -73,27 +73,11 @@ export default function AdminPage() {
     //  setSubmissions(FAKE_DATA);
   }, []);
 
-  /*
-  // TODO (Person 3): call updateStatus(id, newStatus) then refresh the list
-  function handleStatusChange(id, newStatus) {
-    // console.log("TODO: set status", id, newStatus);
-    updateStatus(id, newStatus)
-  } */
-
-  // Same function as the one above. This ensures the status will be seen without refreashing the tab
   async function handleStatusChange(id, newStatus) {
     await updateStatus(id, newStatus);
     getAllSubmissions().then(setSubmissions);
   }
 
-  /*
-  // TODO (Person 3): call uploadSignedFile(id, file) then refresh the list
-  function handleSignedUpload(id, file) {
-    // console.log("TODO: upload signed file for", id, file);
-    uploadSignedFile(id, file)
-  } */
-
-// Same function as the one above. This ensures the upload will be seen without refreashing the tab
   async function handleSignedUpload(id, file) {
     await uploadSignedFile(id, file);
     getAllSubmissions().then(setSubmissions);
@@ -142,7 +126,7 @@ export default function AdminPage() {
     : filteredSubmissions;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="p-7 pb-16 max-w-6xl mx-auto">
       {/* Header banner */}
       <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 px-7 py-6 mb-6 flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -309,17 +293,7 @@ export default function AdminPage() {
                           Additionally, if the document is rejected, 'Upload Signed' is disabled. 
                       */}
 
-                      {/*
-                      <label className="cursor-pointer border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
-                        Upload Signed
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={(e) => handleSignedUpload(sub._id, e.target.files[0])}
-                        />
-                      </label>
-                      */} 
-                      {/*Upload Signed */}
+                      {/* Upload Signed */}
                       <label
                         title="Upload the signed version of the document"
                         className={
